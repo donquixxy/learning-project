@@ -1,14 +1,14 @@
 package main
 
 import (
-	"learning-project/config"
-
+	"learning-project/cmd"
 	"log"
+	"os"
 )
 
 func main() {
-	appConfig := config.GetAppConfiguration()
-
-	log.Printf("Starting Application: %v", appConfig.Name)
-	log.Printf("At Environment: %v", appConfig.AppEnv)
+	if err := cmd.LearningCmd.Execute(); err != nil {
+		log.Println("Stopping learning project . . . | ", err)
+		os.Exit(1)
+	}
 }
