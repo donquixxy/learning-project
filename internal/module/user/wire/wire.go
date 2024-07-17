@@ -12,14 +12,13 @@ import (
 	"github.com/google/wire"
 )
 
-var UserServiceSet = wire.NewSet(
+var userSet = wire.NewSet(
 	driver.InitDatabase,
 	repository.NewUserRepository,
 	service.NewUserService,
 )
 
 func InitUserService() interfaces.UserService {
-	wire.Build(UserServiceSet)
-
+	wire.Build(userSet)
 	return &service.UserService{}
 }

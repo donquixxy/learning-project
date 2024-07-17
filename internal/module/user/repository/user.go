@@ -11,17 +11,6 @@ import (
 )
 
 type userRepository struct {
-	db *gorm.DB
-}
-
-// GetDInstance implements interfaces.UserRepository.
-func (u *userRepository) GetDbTxClient(ctx context.Context, tx *gorm.DB) *gorm.DB {
-
-	if tx != nil {
-		return tx.WithContext(ctx)
-	}
-
-	return u.db.WithContext(ctx)
 }
 
 // Create implements interfaces.UserRepository.
@@ -37,7 +26,7 @@ func (u *userRepository) Create(ctx context.Context, data payload.UserCreate, tx
 		UpdatedAt:  &now,
 	}
 
-	query := u.GetDbTxClient(ctx, tx)
+	query := tx.WithContext(ctx)
 
 	if err := query.Create(&payload).Error; err != nil {
 		return nil, "failed to create user", err
@@ -47,24 +36,24 @@ func (u *userRepository) Create(ctx context.Context, data payload.UserCreate, tx
 }
 
 // Get implements interfaces.UserRepository.
-func (u *userRepository) Get(ctx context.Context, data payload.UserGet) (*entity.User, string, error) {
+func (u *userRepository) Get(ctx context.Context, data payload.UserGet, tx *gorm.DB) (*entity.User, string, error) {
 	var result entity.User
-	query := u.db.WithContext(ctx)
+	query := tx.WithContext(ctx)
 
 	if data.Email != nil {
-		query.Where("email = ?", *data.Email)
+		query = query.Where("email = ?", *data.Email)
 	}
 
 	if data.ID != nil {
-		query.Where("id = ?", *data.ID)
+		query = query.Where("id = ?", *data.ID)
 	}
 
 	if data.Password != nil {
-		query.Where("password = ?", *data.Password)
+		query = query.Where("password = ?", *data.Password)
 	}
 
 	if data.Phone != nil {
-		query.Where("phone = ?", *data.Phone)
+		query = query.Where("phone = ?", *data.Phone)
 	}
 
 	if err := query.First(&result).Error; err != nil {
@@ -78,7 +67,7 @@ func (u *userRepository) Get(ctx context.Context, data payload.UserGet) (*entity
 func (u *userRepository) Update(ctx context.Context, data payload.UserUpdate, tx *gorm.DB) (*entity.User, string, error) {
 	var user entity.User
 
-	query := u.GetDbTxClient(ctx, tx)
+	query := tx.WithContext(ctx)
 
 	if err := query.Where("id = ?", data.ID).First(&user).Error; err != nil {
 		return nil, "failed to update user", err
@@ -104,13 +93,13 @@ func (u *userRepository) Update(ctx context.Context, data payload.UserUpdate, tx
 		user.Phone = *data.Phone
 	}
 
-	if err := u.db.WithContext(ctx).Save(&user).Error; err != nil {
+	if err := tx.WithContext(ctx).Save(&user).Error; err != nil {
 		return nil, "failed to save user", err
 	}
 
 	return &user, "OK", nil
 }
 
-func NewUserRepository(db *gorm.DB) interfaces.UserRepository {
-	return &userRepository{db: db}
+func NewUserRepository() interfaces.UserRepository {
+	return &userRepository{}
 }

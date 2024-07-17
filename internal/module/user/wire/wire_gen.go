@@ -18,11 +18,11 @@ import (
 
 func InitUserService() interfaces.UserService {
 	db := driver.InitDatabase()
-	userRepository := repository.NewUserRepository(db)
+	userRepository := repository.NewUserRepository()
 	userService := service.NewUserService(db, userRepository)
 	return userService
 }
 
 // wire.go:
 
-var UserServiceSet = wire.NewSet(driver.InitDatabase, repository.NewUserRepository, service.NewUserService)
+var userSet = wire.NewSet(driver.InitDatabase, repository.NewUserRepository, service.NewUserService)

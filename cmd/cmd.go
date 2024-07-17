@@ -1,14 +1,15 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"learning-project/config"
+	"learning-project/internal/app"
+	"learning-project/internal/module/user"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-
-	userwire "learning-project/internal/module/user/wire"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
@@ -47,14 +48,22 @@ var LearningCmd = &cobra.Command{
 
 		log.Printf("Starting Application: %v", appConfig.Name)
 		log.Printf("At Environment: %v", appConfig.AppEnv)
-		userService := userwire.InitUserService()
 
-		_ = userService
+		router := app.NewRouter()
+		runApp(router)
+
+		go func() {
+			if err := router.Echo.Start(fmt.Sprintf(":%v", appConfig.AppPort)); err != nil {
+				log.Fatalf("error starting app: %v", err)
+			}
+		}()
 
 		quit := make(chan os.Signal, 1)
 		signal.Notify(quit, os.Interrupt)
 		signal.Notify(quit, syscall.SIGTERM)
 		<-quit
+		router.Echo.Shutdown(context.Background())
+
 	},
 }
 
@@ -126,4 +135,8 @@ func runSpecificMigration(file string) error {
 
 	log.Printf("%v Migration executed successfully", file)
 	return nil
+}
+
+func runApp(router *app.Router) {
+	user.InitUserModule(router)
 }

@@ -7,6 +7,12 @@ import (
 	"github.com/spf13/viper"
 )
 
+type JWTConfig struct {
+	Issuer        string `mapstructure:"ISSUER"`
+	Secret        string `mapstructure:"SECRET"`
+	SecretRefresh string `mapstructure:"SECRET_REFRESH"`
+}
+
 type AppConfiguration struct {
 	Name    string `mapstructure:"APP_NAME"`
 	AppEnv  string `mapstructure:"APP_ENV"`
@@ -23,6 +29,7 @@ type DatabaseConfig struct {
 
 var appConfig *AppConfiguration
 var dbConfig *DatabaseConfig
+var jwtConfig *JWTConfig
 var path string = "./"
 var configType string = "env"
 var configName string = ".env"
@@ -85,4 +92,32 @@ func GetAppConfiguration() *AppConfiguration {
 	}
 
 	return appConfig
+}
+
+func GetJwtConfig() *JWTConfig {
+	mu.Lock()
+
+	defer mu.Unlock()
+
+	if jwtConfig == nil {
+		viper.AddConfigPath(path)
+		viper.SetConfigType(configType)
+		viper.SetConfigName(configName)
+
+		// Init config
+		viper.AutomaticEnv()
+
+		if err := viper.ReadInConfig(); err != nil {
+			log.Fatalf("[Config] - Failed to read config %v", err)
+		}
+		var cfg JWTConfig
+
+		if err := viper.Unmarshal(&cfg); err != nil {
+			panic("unable to unmarshal config")
+		}
+
+		jwtConfig = &cfg
+	}
+
+	return jwtConfig
 }
