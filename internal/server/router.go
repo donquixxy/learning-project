@@ -1,8 +1,11 @@
-package app
+package server
 
 import (
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"learning-project/internal/app"
+	localmiddleware "learning-project/internal/server/middleware"
 )
 
 type Router struct {
@@ -11,9 +14,13 @@ type Router struct {
 	Echo       *echo.Echo
 }
 
-func NewRouter() *Router {
+func NewRouter(log *app.Logger) *Router {
 	echo := echo.New()
-	echo.Validator = NewValidator(validator.New())
+	echo.Validator = app.NewValidator(validator.New())
+
+	echo.Use(middleware.RequestID())
+	echo.Use(localmiddleware.LoggerMiddlware(log))
+
 	publicApi := echo.Group("")
 	privateApi := echo.Group("api")
 

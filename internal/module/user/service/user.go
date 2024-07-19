@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"learning-project/config"
+	"learning-project/internal/app"
 	"learning-project/internal/module/user/entity"
 	"learning-project/internal/module/user/interfaces"
 	"learning-project/internal/module/user/payload"
-	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -17,6 +17,7 @@ import (
 type UserService struct {
 	userRepository interfaces.UserRepository
 	DB             *gorm.DB
+	Logger         *app.Logger
 }
 
 // Create implements interfaces.UserService.
@@ -37,10 +38,12 @@ func (u *UserService) Update(ctx context.Context, data payload.UserUpdate) (*ent
 func NewUserService(
 	DB *gorm.DB,
 	userRepo interfaces.UserRepository,
+	Logger *app.Logger,
 ) interfaces.UserService {
 	return &UserService{
 		userRepository: userRepo,
 		DB:             DB,
+		Logger:         Logger,
 	}
 }
 
@@ -51,11 +54,13 @@ func (u *UserService) Login(ctx context.Context, data payload.LoginRequest) (*pa
 	}, u.DB)
 
 	if err != nil {
+		u.Logger.Errorf("[Login] - Failed to get user from db: %v", err)
 		return nil, msg, err
 	}
 
 	// Compare user hashed password with user raw password
 	if err = bcrypt.CompareHashAndPassword([]byte((user.Password)), []byte(data.Password)); err != nil {
+		u.Logger.Errorf("[Login] - Invalid user password given. User ID :%v. Received string :%v ", user.ID, data.Password)
 		return nil, "Invalid password", err
 	}
 
@@ -63,7 +68,7 @@ func (u *UserService) Login(ctx context.Context, data payload.LoginRequest) (*pa
 	token, err := u.GenerateToken(user, false)
 
 	if err != nil {
-		log.Printf("Failed to generate access token: %v", err)
+		u.Logger.Errorf("[Login] - Failed to generate access token %v", err)
 		return nil, "Invalid access token", err
 	}
 
@@ -71,7 +76,7 @@ func (u *UserService) Login(ctx context.Context, data payload.LoginRequest) (*pa
 	refreshToken, err := u.GenerateToken(user, true)
 
 	if err != nil {
-		log.Printf("Failed to generate refresh token %v", err)
+		u.Logger.Errorf("[Login] - Failed to generate refresh token %v", err)
 		return nil, "Invalid refresh token", err
 	}
 
@@ -82,6 +87,7 @@ func (u *UserService) Login(ctx context.Context, data payload.LoginRequest) (*pa
 	}, u.DB)
 
 	if err != nil {
+		u.Logger.Errorf("[Login] - Failed to update user token at database %v", err)
 		return nil, msg, err
 	}
 
@@ -99,7 +105,8 @@ func (u *UserService) GenerateToken(user *entity.User, isRefreshToken bool) (str
 	now := time.Now()
 	expDate := time.Now().Add(time.Hour * 72)
 	claims := payload.JwtClaims{
-		ID: user.ID,
+		ID:   user.ID,
+		Name: user.Name,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    appConfig.Issuer,
 			Subject:   "subject",

@@ -4,7 +4,8 @@
 package wire
 
 import (
-	"learning-project/internal/driver"
+	wireapp "learning-project/internal/app/wire"
+	wiredb "learning-project/internal/driver/wire"
 	"learning-project/internal/module/user/interfaces"
 	"learning-project/internal/module/user/repository"
 	"learning-project/internal/module/user/service"
@@ -13,9 +14,10 @@ import (
 )
 
 var userSet = wire.NewSet(
-	driver.InitDatabase,
+	wiredb.InitializeDatabase,
 	repository.NewUserRepository,
 	service.NewUserService,
+	wireapp.InitLogger,
 )
 
 func InitUserService() interfaces.UserService {

@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"learning-project/config"
-	"learning-project/internal/app"
+	"learning-project/internal/app/wire"
 	"learning-project/internal/module/user"
+	"learning-project/internal/server"
 	"log"
 	"os"
 	"os/signal"
@@ -45,11 +46,12 @@ var LearningCmd = &cobra.Command{
 	Short: "App",
 	Run: func(cmd *cobra.Command, args []string) {
 		appConfig := config.GetAppConfiguration()
+		logger := wire.InitLogger()
 
-		log.Printf("Starting Application: %v", appConfig.Name)
-		log.Printf("At Environment: %v", appConfig.AppEnv)
+		logger.Infof("Starting Application: %v", appConfig.Name)
+		logger.Infof("At Environment: %v", appConfig.AppEnv)
 
-		router := app.NewRouter()
+		router := server.NewRouter(logger)
 		runApp(router)
 
 		go func() {
@@ -137,6 +139,6 @@ func runSpecificMigration(file string) error {
 	return nil
 }
 
-func runApp(router *app.Router) {
+func runApp(router *server.Router) {
 	user.InitUserModule(router)
 }
