@@ -18,12 +18,17 @@ func NewRouter(log *app.Logger) *Router {
 	echo := echo.New()
 	echo.Validator = app.NewValidator(validator.New())
 
+	echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+	}))
+	echo.Use(middleware.Recover())
 	echo.Use(middleware.RequestID())
 	echo.Use(localmiddleware.LoggerMiddlware(log))
 
 	publicApi := echo.Group("")
 	privateApi := echo.Group("api")
 
+	privateApi.Use(localmiddleware.ValidateJWT())
 	router := &Router{
 		PublicApi:  publicApi,
 		PrivateApi: privateApi,

@@ -32,6 +32,20 @@ func (u *UserService) Get(ctx context.Context, data payload.UserGet) (*entity.Us
 
 // Update implements interfaces.UserService.
 func (u *UserService) Update(ctx context.Context, data payload.UserUpdate) (*entity.User, string, error) {
+
+	if data.Password != nil {
+		// Generate new hashed password
+		newPassword, err := bcrypt.GenerateFromPassword([]byte(*data.Password), 12)
+
+		if err != nil {
+			u.Logger.Errorf("[Update User] - Failed to generate password for user: %v", err)
+			return nil, "failed to update user profile", err
+		}
+
+		strPW := string(newPassword)
+		data.Password = &strPW
+	}
+
 	return u.userRepository.Update(ctx, data, u.DB)
 }
 

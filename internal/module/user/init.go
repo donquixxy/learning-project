@@ -11,4 +11,5 @@ func InitUserModule(router *server.Router) {
 	service := wire.InitUserService()
 	handler := handler.NewUserHandler(service)
 	router.PublicApi.POST("/auth", handler.Login)
+	router.PrivateApi.PUT("/user", handler.Update)
 }

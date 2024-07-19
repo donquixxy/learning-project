@@ -65,7 +65,7 @@ func (u *userRepository) Get(ctx context.Context, data payload.UserGet, tx *gorm
 
 // Update implements interfaces.UserRepository.
 func (u *userRepository) Update(ctx context.Context, data payload.UserUpdate, tx *gorm.DB) (*entity.User, string, error) {
-	var user entity.User
+	var user *entity.User
 
 	query := tx.WithContext(ctx)
 
@@ -97,7 +97,7 @@ func (u *userRepository) Update(ctx context.Context, data payload.UserUpdate, tx
 		return nil, "failed to save user", err
 	}
 
-	return &user, "OK", nil
+	return user, "OK", nil
 }
 
 func NewUserRepository() interfaces.UserRepository {
