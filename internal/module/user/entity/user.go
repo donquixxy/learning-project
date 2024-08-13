@@ -7,8 +7,8 @@ import (
 type User struct {
 	ID         int        `gorm:"primaryKey;column:id;autoIncrement:true" json:"id"`
 	Name       string     `gorm:"column:name" json:"name,omitempty"`
-	LoginToken string     `gorm:"column:login_token" json:"login_token,omitempty"`
-	Password   string     `gorm:"column:password" json:"password,omitempty"`
+	LoginToken string     `gorm:"column:login_token" json:"-"`
+	Password   string     `gorm:"column:password" json:"-"`
 	Phone      string     `gorm:"column:phone" json:"phone,omitempty"`
 	Email      string     `gorm:"column:email" json:"email,omitempty"`
 	CreatedAt  time.Time  `gorm:"column:created_at" json:"created_at,omitempty"`

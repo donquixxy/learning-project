@@ -27,9 +27,17 @@ type DatabaseConfig struct {
 	Password     string `mapstructure:"DB_PASSWORD"`
 }
 
+type RabbitConfig struct {
+	RabbitHost string `mapstructure:"RABBIT_HOST"`
+	RabbitPort int    `mapstructure:"RABBIT_PORT"`
+	Username   string `mapstructure:"RABBIT_USER"`
+	Password   string `mapstructure:"RABBIT_PASS"`
+}
+
 var appConfig *AppConfiguration
 var dbConfig *DatabaseConfig
 var jwtConfig *JWTConfig
+var rabbitConfig *RabbitConfig
 var path string = "./"
 var configType string = "env"
 var configName string = ".env"
@@ -120,4 +128,29 @@ func GetJwtConfig() *JWTConfig {
 	}
 
 	return jwtConfig
+}
+
+func GetRabbitConfig() *RabbitConfig {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if rabbitConfig == nil {
+		viper.AddConfigPath(path)
+		viper.SetConfigType(configType)
+		viper.SetConfigName(configName)
+		viper.AutomaticEnv()
+		if err := viper.ReadInConfig(); err != nil {
+			log.Fatalf("[Config] - Failed to read config %v", err)
+		}
+
+		var cfg RabbitConfig
+		if err := viper.Unmarshal(&cfg); err != nil {
+			panic("unable to unmarshal config")
+		}
+
+		rabbitConfig = &cfg
+		return rabbitConfig
+	}
+
+	return rabbitConfig
 }

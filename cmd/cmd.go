@@ -3,8 +3,11 @@ package cmd
 import (
 	"context"
 	"fmt"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"learning-project/config"
+	"learning-project/internal/app"
 	"learning-project/internal/app/wire"
+	"learning-project/internal/driver"
 	"learning-project/internal/module/user"
 	"learning-project/internal/server"
 	"log"
@@ -46,13 +49,14 @@ var LearningCmd = &cobra.Command{
 	Short: "App",
 	Run: func(cmd *cobra.Command, args []string) {
 		appConfig := config.GetAppConfiguration()
-		logger := wire.InitLogger()
+		appCommons := wire.InitApp()
 
-		logger.Infof("Starting Application: %v", appConfig.Name)
-		logger.Infof("At Environment: %v", appConfig.AppEnv)
+		appCommons.Logger.Infof("Starting Application: %v", appConfig.Name)
+		appCommons.Logger.Infof("At Environment: %v", appConfig.AppEnv)
+		initExchange(appCommons.RabbitConnection)
 
-		router := server.NewRouter(logger)
-		runApp(router)
+		router := server.NewRouter(appCommons.Logger)
+		runApp(router, appCommons)
 
 		go func() {
 			if err := router.Echo.Start(fmt.Sprintf(":%v", appConfig.AppPort)); err != nil {
@@ -139,6 +143,13 @@ func runSpecificMigration(file string) error {
 	return nil
 }
 
-func runApp(router *server.Router) {
-	user.InitUserModule(router)
+func runApp(router *server.Router, commons *app.AppCommons) {
+	user.InitUserModule(router, commons)
+}
+
+func initExchange(conn *amqp.Connection) {
+	qs := []string{"insert", "update", "delete"}
+	if err := driver.DeclareNewExchange(conn, "attendance", qs...); err != nil {
+		log.Println("Error declaring new exchange:", err)
+	}
 }

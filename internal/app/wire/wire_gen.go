@@ -9,15 +9,20 @@ package wire
 import (
 	"github.com/google/wire"
 	"learning-project/internal/app"
+	"learning-project/internal/driver"
 )
 
 // Injectors from wire.go:
 
-func InitLogger() *app.Logger {
+func InitApp() *app.AppCommons {
+	db := driver.InitDatabase()
 	logger := app.NewLogger()
-	return logger
+	validator := app.NewValidator()
+	connection := driver.NewRabbitMQConnection()
+	appCommons := app.NewAppCommons(db, logger, validator, connection)
+	return appCommons
 }
 
 // wire.go:
 
-var logProvider = wire.NewSet(app.NewLogger)
+var appWireSet = wire.NewSet(app.NewLogger, app.NewAppCommons, app.NewValidator, driver.InitDatabase, driver.NewRabbitMQConnection)

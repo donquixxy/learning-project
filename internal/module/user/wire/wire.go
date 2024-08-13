@@ -4,8 +4,7 @@
 package wire
 
 import (
-	wireapp "learning-project/internal/app/wire"
-	wiredb "learning-project/internal/driver/wire"
+	"learning-project/internal/app"
 	"learning-project/internal/module/user/interfaces"
 	"learning-project/internal/module/user/repository"
 	"learning-project/internal/module/user/service"
@@ -14,13 +13,21 @@ import (
 )
 
 var userSet = wire.NewSet(
-	wiredb.InitializeDatabase,
 	repository.NewUserRepository,
 	service.NewUserService,
-	wireapp.InitLogger,
 )
 
-func InitUserService() interfaces.UserService {
+func InitUserService(commons *app.AppCommons) interfaces.UserService {
 	wire.Build(userSet)
 	return &service.UserService{}
+}
+
+var attendanceSet = wire.NewSet(
+	repository.NewAttendanceRepository,
+	service.NewAttendanceService,
+)
+
+func InitAttendanceService(commons *app.AppCommons) interfaces.AttendanceService {
+	wire.Build(attendanceSet)
+	return &service.AttendanceService{}
 }

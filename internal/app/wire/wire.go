@@ -6,13 +6,19 @@ package wire
 import (
 	"github.com/google/wire"
 	"learning-project/internal/app"
+	"learning-project/internal/driver"
 )
 
-var logProvider = wire.NewSet(
+var appWireSet = wire.NewSet(
 	app.NewLogger,
+	app.NewAppCommons,
+	app.NewValidator,
+	driver.InitDatabase,
+	driver.NewRabbitMQConnection,
 )
 
-func InitLogger() *app.Logger {
-	wire.Build(logProvider)
-	return &app.Logger{}
+func InitApp() *app.AppCommons {
+	wire.Build(appWireSet)
+
+	return &app.AppCommons{}
 }

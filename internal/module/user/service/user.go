@@ -11,23 +11,21 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 type UserService struct {
 	userRepository interfaces.UserRepository
-	DB             *gorm.DB
-	Logger         *app.Logger
+	Commons        *app.AppCommons
 }
 
 // Create implements interfaces.UserService.
 func (u *UserService) Create(ctx context.Context, data payload.UserCreate) (*entity.User, string, error) {
-	return u.userRepository.Create(ctx, data, u.DB)
+	return u.userRepository.Create(ctx, data, u.Commons.DB)
 }
 
 // Get implements interfaces.UserService.
 func (u *UserService) Get(ctx context.Context, data payload.UserGet) (*entity.User, string, error) {
-	return u.userRepository.Get(ctx, data, u.DB)
+	return u.userRepository.Get(ctx, data, u.Commons.DB)
 }
 
 // Update implements interfaces.UserService.
@@ -38,7 +36,7 @@ func (u *UserService) Update(ctx context.Context, data payload.UserUpdate) (*ent
 		newPassword, err := bcrypt.GenerateFromPassword([]byte(*data.Password), 12)
 
 		if err != nil {
-			u.Logger.Errorf("[Update User] - Failed to generate password for user: %v", err)
+			u.Commons.Logger.Errorf("[Update User] - Failed to generate password for user: %v", err)
 			return nil, "failed to update user profile", err
 		}
 
@@ -46,18 +44,16 @@ func (u *UserService) Update(ctx context.Context, data payload.UserUpdate) (*ent
 		data.Password = &strPW
 	}
 
-	return u.userRepository.Update(ctx, data, u.DB)
+	return u.userRepository.Update(ctx, data, u.Commons.DB)
 }
 
 func NewUserService(
-	DB *gorm.DB,
 	userRepo interfaces.UserRepository,
-	Logger *app.Logger,
+	Commons *app.AppCommons,
 ) interfaces.UserService {
 	return &UserService{
 		userRepository: userRepo,
-		DB:             DB,
-		Logger:         Logger,
+		Commons:        Commons,
 	}
 }
 
@@ -65,16 +61,16 @@ func (u *UserService) Login(ctx context.Context, data payload.LoginRequest) (*pa
 	// Get user
 	user, msg, err := u.userRepository.Get(ctx, payload.UserGet{
 		Phone: &data.Phone,
-	}, u.DB)
+	}, u.Commons.DB)
 
 	if err != nil {
-		u.Logger.Errorf("[Login] - Failed to get user from db: %v", err)
+		u.Commons.Logger.Errorf("[Login] - Failed to get user from db: %v", err)
 		return nil, msg, err
 	}
 
 	// Compare user hashed password with user raw password
 	if err = bcrypt.CompareHashAndPassword([]byte((user.Password)), []byte(data.Password)); err != nil {
-		u.Logger.Errorf("[Login] - Invalid user password given. User ID :%v. Received string :%v ", user.ID, data.Password)
+		u.Commons.Logger.Errorf("[Login] - Invalid user password given. User ID :%v. Received string :%v ", user.ID, data.Password)
 		return nil, "Invalid password", err
 	}
 
@@ -82,7 +78,7 @@ func (u *UserService) Login(ctx context.Context, data payload.LoginRequest) (*pa
 	token, err := u.GenerateToken(user, false)
 
 	if err != nil {
-		u.Logger.Errorf("[Login] - Failed to generate access token %v", err)
+		u.Commons.Logger.Errorf("[Login] - Failed to generate access token %v", err)
 		return nil, "Invalid access token", err
 	}
 
@@ -90,7 +86,7 @@ func (u *UserService) Login(ctx context.Context, data payload.LoginRequest) (*pa
 	refreshToken, err := u.GenerateToken(user, true)
 
 	if err != nil {
-		u.Logger.Errorf("[Login] - Failed to generate refresh token %v", err)
+		u.Commons.Logger.Errorf("[Login] - Failed to generate refresh token %v", err)
 		return nil, "Invalid refresh token", err
 	}
 
@@ -98,10 +94,10 @@ func (u *UserService) Login(ctx context.Context, data payload.LoginRequest) (*pa
 	_, msg, err = u.userRepository.Update(ctx, payload.UserUpdate{
 		ID:         user.ID,
 		LoginToken: &token,
-	}, u.DB)
+	}, u.Commons.DB)
 
 	if err != nil {
-		u.Logger.Errorf("[Login] - Failed to update user token at database %v", err)
+		u.Commons.Logger.Errorf("[Login] - Failed to update user token at database %v", err)
 		return nil, msg, err
 	}
 

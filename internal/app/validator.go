@@ -10,8 +10,11 @@ type Validator struct {
 	validator *validator.Validate
 }
 
-func NewValidator(validator *validator.Validate) *Validator {
-	return &Validator{validator: validator}
+func NewValidator() *Validator {
+	v := validator.New()
+	return &Validator{
+		validator: v,
+	}
 }
 
 func (v *Validator) Validate(i interface{}) error {

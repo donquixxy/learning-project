@@ -7,9 +7,8 @@
 package wire
 
 import (
-	wire2 "github.com/google/wire"
-	"learning-project/internal/app/wire"
-	"learning-project/internal/driver/wire"
+	"github.com/google/wire"
+	"learning-project/internal/app"
 	"learning-project/internal/module/user/interfaces"
 	"learning-project/internal/module/user/repository"
 	"learning-project/internal/module/user/service"
@@ -17,14 +16,20 @@ import (
 
 // Injectors from wire.go:
 
-func InitUserService() interfaces.UserService {
-	db := driver.InitializeDatabase()
+func InitUserService(commons *app.AppCommons) interfaces.UserService {
 	userRepository := repository.NewUserRepository()
-	logger := wire.InitLogger()
-	userService := service.NewUserService(db, userRepository, logger)
+	userService := service.NewUserService(userRepository, commons)
 	return userService
+}
+
+func InitAttendanceService(commons *app.AppCommons) interfaces.AttendanceService {
+	attendanceRepository := repository.NewAttendanceRepository()
+	attendanceService := service.NewAttendanceService(commons, attendanceRepository)
+	return attendanceService
 }
 
 // wire.go:
 
-var userSet = wire2.NewSet(driver.InitializeDatabase, repository.NewUserRepository, service.NewUserService, wire.InitLogger)
+var userSet = wire.NewSet(repository.NewUserRepository, service.NewUserService)
+
+var attendanceSet = wire.NewSet(repository.NewAttendanceRepository, service.NewAttendanceService)

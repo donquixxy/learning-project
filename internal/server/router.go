@@ -1,7 +1,6 @@
 package server
 
 import (
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"learning-project/internal/app"
@@ -16,7 +15,7 @@ type Router struct {
 
 func NewRouter(log *app.Logger) *Router {
 	echo := echo.New()
-	echo.Validator = app.NewValidator(validator.New())
+	echo.Validator = app.NewValidator()
 
 	echo.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"*"},
